@@ -13,7 +13,6 @@ export type AiAction =
       role: string;
       status?: JobStatus;
       appliedDate?: string;
-      tags?: string[];
       notes?: string[];
       custom?: Record<string, string | number | null>;
     }
@@ -24,12 +23,10 @@ export type AiAction =
       role?: string;
       status?: JobStatus;
       appliedDate?: string;
-      tags?: string[];
       notes?: string[];
       custom?: Record<string, string | number | null>;
     }
   | { type: 'set_status'; id: string; status: JobStatus }
-  | { type: 'add_tag'; id: string; tag: string }
   | { type: 'add_note'; id: string; note: string }
   | { type: 'add_custom_field'; name: string; fieldType: CustomField['type'] }
   | { type: 'delete_job'; id: string };
@@ -56,7 +53,6 @@ const ACTION_TYPES = new Set<AiAction['type']>([
   'add_job',
   'update_job',
   'set_status',
-  'add_tag',
   'add_note',
   'add_custom_field',
   'delete_job'
@@ -87,7 +83,7 @@ export function buildAiPrompt(jobs: Job[], fields: CustomField[], input: string)
     (field) => `- ${field.name} (id: ${field.id}, type: ${field.type})`
   );
 
-  const system = `You are a resume tracker assistant. Output JSON only, no Markdown or explanations.\n\nThe user input may be a pasted email or webpage. Detect what it is and extract actionable info. Common intents:\n- rejection email -> set_status to rejected\n- interview invitation -> set_status to interviewed\n- offer email -> set_status to offer\n- acceptance/offer accepted -> set_status to accepted\n\nIf the input contains a company and role that match an existing job, update that job. If you cannot confidently match a job id, do not output actions.\n\nReturn the structure:\n{\n  \"summary\": \"short summary\",\n  \"actions\": [\n    { \"type\": \"add_job\", ... },\n    { \"type\": \"set_status\", ... }\n  ]\n}\n\nAllowed actions:\n- add_job: { type, company, role, status, appliedDate, tags, notes, custom }\n- update_job: { type, id, company, role, status, appliedDate, tags, notes, custom }\n- set_status: { type, id, status }\n- add_tag: { type, id, tag }\n- add_note: { type, id, note }\n- add_custom_field: { type, name, fieldType }\n- delete_job: { type, id }\n\nRules:\n1) Each action must have a top-level \"type\" field. Do not nest actions under keys like \"add_job\".\n2) status must be one of applied / rejected / interviewed / offer / accepted / archived\n3) custom keys must match existing field ids or field names (or add_custom_field first)\n4) If you cannot determine the id, do not output that action\n5) actions can be an empty array`;
+  const system = `You are a resume tracker assistant. Output JSON only, no Markdown or explanations.\n\nThe user input may be a pasted email or webpage. Detect what it is and extract actionable info. Common intents:\n- rejection email -> set_status to rejected\n- interview invitation -> set_status to interviewed\n- offer email -> set_status to offer\n- acceptance/offer accepted -> set_status to accepted\n\nIf the input contains a company and role that match an existing job, update that job. If you cannot confidently match a job id, do not output actions.\n\nReturn the structure:\n{\n  \"summary\": \"short summary\",\n  \"actions\": [\n    { \"type\": \"add_job\", ... },\n    { \"type\": \"set_status\", ... }\n  ]\n}\n\nAllowed actions:\n- add_job: { type, company, role, status, appliedDate, notes, custom }\n- update_job: { type, id, company, role, status, appliedDate, notes, custom }\n- set_status: { type, id, status }\n- add_note: { type, id, note }\n- add_custom_field: { type, name, fieldType }\n- delete_job: { type, id }\n\nRules:\n1) Each action must have a top-level \"type\" field. Do not nest actions under keys like \"add_job\".\n2) status must be one of applied / rejected / interviewed / offer / accepted / archived\n3) custom keys must match existing field ids or field names (or add_custom_field first)\n4) If you cannot determine the id, do not output that action\n5) actions can be an empty array`;
 
   const user = `Current jobs:\n${jobLines.length ? jobLines.join('\n') : '- (none)'}\n\nCustom fields:\n${fieldLines.length ? fieldLines.join('\n') : '- (none)'}\n\nUser input:\n${input}`;
 
@@ -209,7 +205,6 @@ function sanitizeAction(action: AiAction): AiAction | null {
         role,
         status: toStatus(action.status),
         appliedDate: toOptionalText(action.appliedDate),
-        tags: toStringArray(action.tags),
         notes: toStringArray(action.notes),
         custom: toCustom(action.custom)
       };
@@ -224,7 +219,6 @@ function sanitizeAction(action: AiAction): AiAction | null {
         role: toOptionalText(action.role),
         status: toStatus(action.status),
         appliedDate: toOptionalText(action.appliedDate),
-        tags: toStringArray(action.tags),
         notes: toStringArray(action.notes),
         custom: toCustom(action.custom)
       };
@@ -234,12 +228,6 @@ function sanitizeAction(action: AiAction): AiAction | null {
       const status = toStatus(action.status);
       if (!id || !status) return null;
       return { type: 'set_status', id, status };
-    }
-    case 'add_tag': {
-      const id = toText(action.id);
-      const tag = toText(action.tag);
-      if (!id || !tag) return null;
-      return { type: 'add_tag', id, tag };
     }
     case 'add_note': {
       const id = toText(action.id);

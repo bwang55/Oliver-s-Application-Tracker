@@ -3,7 +3,6 @@ import type { AiAction } from './ai';
 import {
   addJob,
   addNote,
-  addTag,
   deleteJob,
   setStatus,
   updateJob,
@@ -46,7 +45,6 @@ export async function applyAiActions(
             role: action.role,
             status: normalizeStatus(action.status),
             appliedDate: action.appliedDate,
-            tags: action.tags,
             notes: action.notes,
             custom
           });
@@ -65,7 +63,6 @@ export async function applyAiActions(
             role: action.role,
             status: normalizeStatus(action.status),
             appliedDate: action.appliedDate,
-            tags: action.tags,
             notes: action.notes,
             custom
           });
@@ -82,14 +79,6 @@ export async function applyAiActions(
           }
           await setStatus(action.id, normalized);
           results.push({ action, ok: true, message: 'Status updated' });
-          break;
-        }
-        case 'add_tag': {
-          if (!action.id || !action.tag) {
-            throw new Error('Missing id or tag');
-          }
-          await addTag(action.id, action.tag);
-          results.push({ action, ok: true, message: 'Tag added' });
           break;
         }
         case 'add_note': {

@@ -1,29 +1,56 @@
-# Resume Tracker
+# Oliver's Application Tracker
 
-一个简历投递跟踪应用，使用 React + Vite，数据保存在本地浏览器的 localStorage。
+A minimalist, AI-assisted application tracker built for focus. Oliver’s keeps your pipeline clean, local, and beautifully readable across desktop, tablet, and phone.
 
-## 启动
+## Release Highlights
+- **Local-first**: All data stays in your browser. No server required.
+- **AI-assisted updates**: Paste a rejection or interview email and let the assistant handle status changes.
+- **Timeline clarity**: Every change lands in a clean, vertical timeline.
+- **Note-first details**: One focused note per application—fast to read and edit.
+- **Import/Export ready**: Drag in CSV/JSON, export your data anytime.
+- **Dark mode**: Polished, low‑glare UI with smooth transitions.
 
-1. 安装依赖
-
+## Quick Start
 ```bash
 npm install
-```
-
-2. 启动
-
-```bash
 npm run dev
 ```
 
-## AI 使用说明
+## AI Setup
+1. Open **Settings → AI**.
+2. Fill in your **API Key**, **Base URL**, and **Model**.
+3. Paste an email or ask for changes, e.g. “Mark Shawmut as rejected.”
 
-- 在右上角打开 AI 对话框。
-- 填写你的 API Key / Base URL / Model。
-- 输入指令，例如“把 XX 公司标记为被拒绝，并新增字段薪资范围”。
-- 生成动作后点击执行。
+The assistant outputs structured actions only; no extra prose.
 
-## 数据结构
+## Import & Export
+Open **Settings → Import & Export**:
+- **Drop** a `.csv` or `.json` file to import.
+- **Download JSON export** to backup your data.
+- **Download CSV template** to prep a clean import.
 
-- localStorage `resumeTracker.jobs` 保存岗位数据。
-- localStorage `resumeTracker.schema` 保存自定义字段列表。
+### CSV Template
+The CSV template includes the following columns:
+```
+company,role,status,appliedDate,note
+```
+- `company`, `role` are required
+- `status` values: `applied`, `interviewed`, `offer`, `accepted`, `rejected`, `archived`
+- `appliedDate` uses `YYYY-MM-DD`
+
+## Scripts
+```bash
+npm run dev
+npm run build
+npm run preview
+npm test
+```
+
+## Data Storage
+Oliver’s stores data locally in your browser:
+- `resumeTracker.jobs`
+- `resumeTracker.schema`
+
+---
+
+If you want a hosted version or cloud sync, Firebase integration can be added later.

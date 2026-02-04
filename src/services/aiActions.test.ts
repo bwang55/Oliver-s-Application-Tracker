@@ -52,7 +52,6 @@ describe('applyAiActions', () => {
           company: 'Shawmut Design and Construction',
           role: 'Intern/Coop - Software Development',
           status: 'applied',
-          tags: ['email'],
           notes: ['auto-imported'],
           custom: { [fieldId]: 'Email' }
         }
@@ -71,7 +70,6 @@ describe('applyAiActions', () => {
           type: 'update_job',
           id: jobId,
           role: 'Intern - Software Development',
-          tags: ['email', 'portal'],
           notes: ['updated'],
           custom: { [fieldId]: 'Portal' }
         }
@@ -82,12 +80,6 @@ describe('applyAiActions', () => {
 
     results = await applyAiActions(
       [{ type: 'set_status', id: jobId, status: 'interviewed' }],
-      schema.customFields
-    );
-    expect(results[0].ok).toBe(true);
-
-    results = await applyAiActions(
-      [{ type: 'add_tag', id: jobId, tag: 'phone-screen' }],
       schema.customFields
     );
     expect(results[0].ok).toBe(true);

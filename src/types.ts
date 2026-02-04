@@ -18,6 +18,7 @@ export type TimelineEventType =
   | 'created'
   | 'status_changed'
   | 'note_added'
+  | 'note_updated'
   | 'tag_added'
   | 'applied_date_updated'
   | 'custom_updated';

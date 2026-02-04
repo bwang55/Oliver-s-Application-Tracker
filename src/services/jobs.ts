@@ -3,6 +3,14 @@ import { makeFieldId } from './schema';
 
 const JOBS_KEY = 'resumeTracker.jobs';
 const SCHEMA_KEY = 'resumeTracker.schema';
+const STATUS_LABELS: Record<JobStatus, string> = {
+  applied: 'Applied',
+  interviewed: 'Interviewing',
+  offer: 'Offer',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
+  archived: 'Archived'
+};
 
 type SchemaPayload = {
   customFields: CustomField[];
@@ -47,16 +55,16 @@ export async function addJob(input: JobInput) {
   const status = input.status ?? 'applied';
   const now = timestamp();
   const timeline: TimelineEvent[] = [
-    createTimelineEvent('created', `Created application`, now)
+    createTimelineEvent('created', `Created`, now)
   ];
   timeline.push(
-    createTimelineEvent('status_changed', `Status set to ${status}`, now)
+    createTimelineEvent('status_changed', `${STATUS_LABELS[status]}`, now)
   );
   if (input.appliedDate) {
     timeline.push(
       createTimelineEvent(
         'applied_date_updated',
-        `Applied date set to ${input.appliedDate}`,
+        `Applied date: ${input.appliedDate}`,
         now
       )
     );
@@ -93,7 +101,7 @@ export async function updateJob(id: string, input: Partial<JobInput>) {
       timeline.push(
         createTimelineEvent(
           'status_changed',
-          `Status set to ${input.status}`,
+          `${STATUS_LABELS[input.status] ?? input.status}`,
           now
         )
       );
@@ -102,7 +110,7 @@ export async function updateJob(id: string, input: Partial<JobInput>) {
       timeline.push(
         createTimelineEvent(
           'applied_date_updated',
-          `Applied date set to ${nextAppliedDate || 'unknown'}`,
+          `Applied date: ${nextAppliedDate || 'unknown'}`,
           now
         )
       );
@@ -131,7 +139,7 @@ export async function setStatus(id: string, status: JobStatus) {
     const now = timestamp();
     const timeline = ensureTimeline(job);
     timeline.push(
-      createTimelineEvent('status_changed', `Status set to ${status}`, now)
+      createTimelineEvent('status_changed', `${STATUS_LABELS[status]}`, now)
     );
     return {
       ...job,
@@ -153,7 +161,7 @@ export async function addTag(id: string, tag: string) {
     const timeline = ensureTimeline(job);
     if (!job.tags?.includes(tag)) {
       timeline.push(
-        createTimelineEvent('tag_added', `Tag added: ${tag}`, now)
+        createTimelineEvent('tag_added', `Tag added`, now)
       );
     }
     return {
@@ -171,18 +179,9 @@ export async function addNote(id: string, note: string) {
   const updated = jobs.map((job) => {
     if (job.id !== id) return job;
     const now = timestamp();
-    const timeline = ensureTimeline(job);
-    timeline.push(
-      createTimelineEvent(
-        'note_added',
-        `Note added: ${summarize(note)}`,
-        now
-      )
-    );
     return {
       ...job,
       notes: [...(job.notes ?? []), note],
-      timeline,
       updatedAt: now
     };
   });
@@ -194,18 +193,9 @@ export async function setNote(id: string, note: string | null) {
   const updated = jobs.map((job) => {
     if (job.id !== id) return job;
     const now = timestamp();
-    const timeline = ensureTimeline(job);
-    timeline.push(
-      createTimelineEvent(
-        'note_updated',
-        note ? 'Note updated' : 'Note cleared',
-        now
-      )
-    );
     return {
       ...job,
       notes: note ? [note] : [],
-      timeline,
       updatedAt: now
     };
   });
@@ -223,7 +213,7 @@ export async function setCustomFieldValue(
     const now = timestamp();
     const timeline = ensureTimeline(job);
     timeline.push(
-      createTimelineEvent('custom_updated', `Custom field updated`, now)
+      createTimelineEvent('custom_updated', `Custom updated`, now)
     );
     return {
       ...job,

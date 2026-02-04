@@ -3,6 +3,7 @@ import type { CustomField, CustomFieldType, Job, JobStatus } from './types';
 import {
   addJob,
   deleteJob,
+  setCustomFieldValue,
   setNote,
   setStatus,
   subscribeJobs,
@@ -409,23 +410,33 @@ export default function App() {
         status?: JobStatus;
         appliedDate?: string;
         note?: string;
+        notes?: string[];
+        custom?: Record<string, string | number | null>;
       }> = [];
 
       if (extension === 'json') {
         const parsed = JSON.parse(text);
         const rawJobs = Array.isArray(parsed) ? parsed : parsed?.jobs;
+        const rawFields = Array.isArray(parsed?.fields) ? parsed.fields : [];
         if (!Array.isArray(rawJobs)) {
           throw new Error('JSON must be an array or contain a jobs array.');
+        }
+        for (const field of rawFields) {
+          if (!field?.name || !field?.type) continue;
+          await upsertCustomField(field.name, field.type);
         }
         inputs = rawJobs.map((job: any) => ({
           company: job.company ?? job.Company,
           role: job.role ?? job.Role,
           status: normalizeStatus(job.status ?? job.Status),
           appliedDate: job.appliedDate ?? job.applied_date ?? job.AppliedDate,
-          note:
-            job.note ??
-            job.Note ??
-            (Array.isArray(job.notes) ? job.notes[0] : job.notes)
+          notes: Array.isArray(job.notes)
+            ? job.notes
+            : job.note || job.Note
+              ? [job.note ?? job.Note]
+              : undefined,
+          custom:
+            job.custom && typeof job.custom === 'object' ? job.custom : undefined
         }));
       } else if (extension === 'csv') {
         const rows = parseCsv(text);
@@ -458,7 +469,8 @@ export default function App() {
           role: input.role,
           status: input.status,
           appliedDate: input.appliedDate,
-          notes: input.note ? [input.note] : undefined
+          notes: input.notes ?? (input.note ? [input.note] : undefined),
+          custom: input.custom
         });
         added += 1;
       }
@@ -503,6 +515,9 @@ export default function App() {
     await deleteJob(id);
     if (expandedId === id) {
       setExpandedId(null);
+    }
+    if (noteEditingId === id) {
+      setNoteEditingId(null);
     }
   };
 
@@ -950,7 +965,12 @@ export default function App() {
                         <button
                           className="ghost"
                           onClick={() =>
-                            setExpandedId(expandedId === job.id ? null : job.id)
+                            {
+                              setExpandedId(
+                                expandedId === job.id ? null : job.id
+                              );
+                              setNoteEditingId(null);
+                            }
                           }
                         >
                           {expandedId === job.id ? 'Hide' : 'Details'}
@@ -1057,6 +1077,48 @@ export default function App() {
                               </div>
                             ))}
                           </div>
+
+                          {fields.length > 0 && (
+                            <div className="detail-block">
+                              <h3>Custom fields</h3>
+                              <div className="custom-grid">
+                                {fields.map((field) => (
+                                  <label key={field.id} className="custom-field">
+                                    <span>{field.name}</span>
+                                    <input
+                                      key={`${job.id}-${field.id}-${String(
+                                        job.custom?.[field.id] ?? ''
+                                      )}`}
+                                      defaultValue={String(
+                                        job.custom?.[field.id] ?? ''
+                                      )}
+                                      type={
+                                        field.type === 'number'
+                                          ? 'number'
+                                          : field.type === 'date'
+                                            ? 'date'
+                                            : field.type === 'url'
+                                              ? 'url'
+                                              : 'text'
+                                      }
+                                      onBlur={(event) => {
+                                        const raw = event.target.value;
+                                        const parsed =
+                                          field.type === 'number'
+                                            ? Number(raw)
+                                            : raw;
+                                        setCustomFieldValue(
+                                          job.id,
+                                          field.id,
+                                          raw === '' ? null : parsed
+                                        );
+                                      }}
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
