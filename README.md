@@ -1,4 +1,4 @@
-# 🦅 Oliver's Application Tracker
+# Oliver's Application Tracker
 
 A minimalist, AI-assisted application tracker built for focus. Keep your pipeline clean, local, and readable everywhere.
 
